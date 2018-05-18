@@ -23,37 +23,54 @@ def create_folder(keyword):
     return folder_name
 
 
-def download_images(query):
-    """Uses <query> parameter as search keyword in Google Images,
+def download_images(keyword, images_to_download=None):
+    """Uses <keyword> parameter as search keyword in Google Images,
     then downloads all (up to 100) image results.
     """
-    if not query:
+    if not keyword:
         raise RuntimeError('You provided an empty search keyword!')
+    if images_to_download is not None and images_to_download <= 0:
+        raise RuntimeError('You opted to download less than 1 image(s)')
 
-    q = '+'.join(query.split())
+    q = '+'.join(keyword.split())
     url = 'https://www.google.co.in/search?q={}&source=lnms&tbm=isch'.format(q)
     google_images_request = requests.get(url, headers=REQUEST_HEADER)
     if google_images_request.status_code == 200 and google_images_request.text:
-        folder_name = create_folder(query)
+        folder_name = create_folder(keyword)
         # Google stores image source link within a key, "ou"
         # Ignore first result: bad link
         image_sources = google_images_request.text.split('"ou":"')[1:]
+        if not images_to_download:
+            images_to_download = len(image_sources)
+
         for i, image_src in enumerate(image_sources):
+            if (i + 1) > images_to_download:
+                break
+
             image_url = image_src[:image_src.find('"')]
             file_name = '{}{}'.format(i, image_url[image_url.rfind('.'):])
             image_request = requests.get(image_url, headers=REQUEST_HEADER)
             with open(os.path.join(folder_name, file_name), 'wb') as img:
                 img.write(image_request.content)
-            print('Downloaded {} / {} image results'.format(i+1, len(image_sources)))
+            print('Downloaded {} / {} images'.format(i+1, images_to_download))
 
 
 def main():
-    search_keyword = None
-    try:
+    if len(sys.argv) < 2:
+        raise RuntimeError('Please provide a search keyword, i.e.: '
+                           'python3 main.py "cake"')
+    else:
         search_keyword = sys.argv[1]
-        download_images(search_keyword.strip())
-    except IndexError as e:
-        print('Please provide a search keyword, i.e.: python3 main.py "cake"')
+
+    images_to_download = None
+    try:
+        images_to_download = int(sys.argv[2])
+        download_images(search_keyword, images_to_download)
+    except IndexError as ie:  # No number of images to download provided
+        download_images(search_keyword)
+    except ValueError as ve:  # Provided argument was not a number
+        print('Please provide a valid number of images to download, i.e.: '
+              'python3 main.py "cake" 5')
 
 
 if __name__ == "__main__":
