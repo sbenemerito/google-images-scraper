@@ -33,7 +33,7 @@ def download_images(keyword, images_to_download=None):
         raise RuntimeError('You opted to download less than 1 image(s)')
 
     q = '+'.join(keyword.split())
-    url = 'https://www.google.co.in/search?q={}&source=lnms&tbm=isch'.format(q)
+    url = 'https://www.google.co.in/search?q={}&source=lnms&tbm=isch&tbs=ift:jpg'.format(q)
     google_images_request = requests.get(url, headers=REQUEST_HEADER)
     if google_images_request.status_code == 200 and google_images_request.text:
         folder_name = create_folder(keyword)
@@ -48,7 +48,7 @@ def download_images(keyword, images_to_download=None):
                 break
 
             image_url = image_src[:image_src.find('"')]
-            file_name = '{}{}'.format(i, image_url[image_url.rfind('.'):])
+            file_name = '{}.jpg'.format(i)
             image_request = requests.get(image_url, headers=REQUEST_HEADER)
             with open(os.path.join(folder_name, file_name), 'wb') as img:
                 img.write(image_request.content)
