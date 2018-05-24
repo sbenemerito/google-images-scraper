@@ -49,10 +49,20 @@ def download_images(keyword, images_to_download=None):
 
             image_url = image_src[:image_src.find('"')]
             file_name = '{}.jpg'.format(i)
-            image_request = requests.get(image_url, headers=REQUEST_HEADER)
-            with open(os.path.join(folder_name, file_name), 'wb') as img:
-                img.write(image_request.content)
-            print('Downloaded {} / {} images'.format(i+1, images_to_download))
+
+            successful_download = False
+            try:
+                image_request = requests.get(image_url, headers=REQUEST_HEADER)
+                successful_download = True
+            except requests.exceptions.RequestException as e:  # Retry request
+                pass
+
+            if successful_download:
+                with open(os.path.join(folder_name, file_name), 'wb') as img:
+                    img.write(image_request.content)
+                print('Downloaded {} / {} images'.format(i+1, images_to_download))
+            else:
+                print('Failed downloading image #{} (Connection Refused)'.format(i+1))
 
 
 def main():
